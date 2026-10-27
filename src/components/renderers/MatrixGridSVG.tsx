@@ -55,7 +55,7 @@ export const MatrixGridSVG: React.FC<MatrixGridSVGProps> = ({
           })}
         </div>
 
-        {data.progressionNote && (
+        {showHighlight && data.progressionNote && (
           <div className="mt-2 text-xs font-semibold text-gray-500 bg-gray-100/80 px-3 py-1 rounded-full text-center">
             {data.progressionNote}
           </div>

@@ -24,7 +24,7 @@ import { generateShapeQuantityQuestion } from '../../../engine/quantitative/shap
 import { generateSequenceQuestion } from '../../../engine/quantitative/sequenceAndDiceGenerator';
 import { generateCube3DQuestion } from '../../../engine/quantitative/cube3DGenerator';
 import { generateNonverbalQuestion } from '../../../engine/nonverbal/nonverbalGenerator';
-import { generateVerbalQuestion } from '../../../engine/verbal/verbalQuestionBank';
+import { generateVerbalQuestion, getAllVerbalQuestions } from '../../../engine/verbal/verbalQuestionBank';
 
 describe('Precision SVG Renderers Suite', () => {
   // ==========================================================================
@@ -163,6 +163,79 @@ describe('Precision SVG Renderers Suite', () => {
       render(<GeometricShapeSVG visual={visual} />);
       expect(screen.getByText('PENGUIN')).toBeInTheDocument();
     });
+
+    it('renders type: "composite" with background and multiple visual elements', () => {
+      const visual: CellVisual = {
+        type: 'composite',
+        background: '#F0F9FF',
+        elements: [
+          { shape: 'circle', color: '#1E5AA8', fill: 'solid', x: 30, y: 30, scale: 0.6 },
+          { shape: 'triangle', color: '#FFD100', fill: 'striped-diagonal', x: 70, y: 70, scale: 0.6, rotation: 45 },
+        ],
+      };
+      const { container } = render(<GeometricShapeSVG visual={visual} />);
+      expect(screen.getByTestId('geometric-shape-svg')).toBeInTheDocument();
+      // Should render the background rect
+      expect(container.querySelector('rect[fill="#F0F9FF"]')).not.toBeNull();
+      // Should render both elements
+      expect(container.querySelector('circle')).not.toBeNull();
+      expect(container.querySelector('polygon')).not.toBeNull();
+    });
+
+    it('renders type: "cube-isometric" by delegating to IsometricCubeSVG', () => {
+      const visual: CellVisual = {
+        type: 'cube-isometric',
+        grid: [[2, 1], [0, 1]],
+        highlightHidden: true,
+      };
+      render(<GeometricShapeSVG visual={visual} />);
+      expect(screen.getByTestId('geometric-shape-svg')).toBeInTheDocument();
+      expect(screen.getByTestId('isometric-cube-svg')).toBeInTheDocument();
+    });
+
+    it('renders type: "svg-path" with custom path and viewBox', () => {
+      const visual: CellVisual = {
+        type: 'svg-path',
+        path: 'M 10,10 L 90,90',
+        stroke: '#DC2626',
+        strokeWidth: 4,
+      };
+      const { container } = render(<GeometricShapeSVG visual={visual} />);
+      expect(screen.getByTestId('geometric-shape-svg')).toBeInTheDocument();
+      const pathEl = container.querySelector('path');
+      expect(pathEl).not.toBeNull();
+      expect(pathEl?.getAttribute('d')).toBe('M 10,10 L 90,90');
+    });
+
+    it('renders innerShape with custom innerFill pattern and centered transform', () => {
+      const visual: CellVisual = {
+        type: 'shape',
+        shape: 'square',
+        fill: 'solid',
+        color: '#1E5AA8',
+        innerShape: 'star',
+        innerFill: 'striped-v',
+        innerColor: '#FFD100',
+      };
+      const { container } = render(<GeometricShapeSVG visual={visual} />);
+      expect(screen.getByTestId('geometric-shape-svg')).toBeInTheDocument();
+      // Should render outer rect and inner star polygon
+      expect(container.querySelector('rect')).not.toBeNull();
+      expect(container.querySelector('polygon')).not.toBeNull();
+      // Inner shape should be wrapped in centered scaling transform
+      const innerGroup = container.querySelector('[transform*="scale(0.48)"]');
+      expect(innerGroup).not.toBeNull();
+    });
+
+    it('supports size modifiers "sm", "md", "lg"', () => {
+      const visualSm: CellVisual = { type: 'shape', shape: 'circle', fill: 'solid', color: '#1E5AA8', size: 'sm' };
+      const { container: containerSm } = render(<GeometricShapeSVG visual={visualSm} />);
+      expect(containerSm.querySelector('[transform*="scale(0.75)"]')).not.toBeNull();
+
+      const visualLg: CellVisual = { type: 'shape', shape: 'circle', fill: 'solid', color: '#1E5AA8', size: 'lg' };
+      const { container: containerLg } = render(<GeometricShapeSVG visual={visualLg} />);
+      expect(containerLg.querySelector('[transform*="scale(1.15)"]')).not.toBeNull();
+    });
   });
 
   // ==========================================================================
@@ -280,6 +353,25 @@ describe('Precision SVG Renderers Suite', () => {
       expect(screen.getByTestId('sequence-frame-3')).toBeInTheDocument();
       expect(screen.getByTestId('sequence-frame-3').querySelector('[data-testid="question-mark-cell"]')).toBeInTheDocument();
     });
+
+    it('does not render progressionNote when showHighlight is false/omitted, but renders progressionNote when showHighlight={true}', () => {
+      const data: SequenceData = {
+        type: 'sequence-series',
+        frames: [
+          { type: 'number', value: 2 },
+          { type: 'number', value: 4 },
+          { type: 'question-mark' },
+        ],
+        questionIndex: 2,
+        progressionNote: '+2 arithmetic progression',
+      };
+
+      const { rerender } = render(<MatrixGridSVG data={data} showHighlight={false} />);
+      expect(screen.queryByText('+2 arithmetic progression')).not.toBeInTheDocument();
+
+      rerender(<MatrixGridSVG data={data} showHighlight={true} />);
+      expect(screen.getByText('+2 arithmetic progression')).toBeInTheDocument();
+    });
   });
 
   // ==========================================================================
@@ -314,6 +406,24 @@ describe('Precision SVG Renderers Suite', () => {
       expect(screen.getByTestId('scale-unit-1')).toBeInTheDocument();
       expect(screen.getByTestId('target-pan-question')).toBeInTheDocument();
     });
+    it('renders scales with tilt when status is tilted-left or tilted-right', () => {
+      const data: BalanceScaleData = {
+        type: 'balance-scale',
+        scales: [
+          {
+            id: 'scale-tilted',
+            leftPan: [{ id: 'item-1', shape: 'circle', color: '#1E5AA8', count: 3 }],
+            rightPan: [{ id: 'item-2', shape: 'square', color: '#FF6F00', count: 1 }],
+            status: 'tilted-left',
+          },
+        ],
+        targetScaleIndex: 0,
+        targetPan: 'right',
+      };
+      const { container } = render(<BalanceScaleSVG data={data} />);
+      const g = container.querySelector('g[transform]');
+      expect(g?.getAttribute('transform')).toContain('rotate(-6');
+    });
   });
 
   // ==========================================================================
@@ -346,6 +456,25 @@ describe('Precision SVG Renderers Suite', () => {
       rerender(<IsometricCubeSVG data={cubeData} showHiddenXRay={true} />);
       expect(screen.getByTestId('hidden-cube-xray')).toBeInTheDocument();
     });
+
+    it('renders 5-layer 3x3 stacks safely within calibrated viewBox (380x310) without clipping', () => {
+      const tallCubeData: Cube3DData = {
+        type: 'cube-3d',
+        grid: [
+          [5, 4, 3],
+          [4, 3, 2],
+          [3, 2, 1],
+        ],
+        totalCubes: 27,
+        visibleCubes: 18,
+        hiddenCubes: 9,
+        questionType: 'hidden-cubes',
+      };
+      render(<IsometricCubeSVG data={tallCubeData} />);
+      const svg = screen.getByTestId('isometric-cube-svg').querySelector('svg');
+      expect(svg).toBeInTheDocument();
+      expect(svg?.getAttribute('viewBox')).toBe('0 0 380 310');
+    });
   });
 
   // ==========================================================================
@@ -370,6 +499,107 @@ describe('Precision SVG Renderers Suite', () => {
       render(<VerbalIllustrationSVG item={verbalItem} showWordLabel={false} />);
       expect(screen.getByTestId('verbal-illustration-svg')).toBeInTheDocument();
       expect(screen.queryByText('WHALE')).not.toBeInTheDocument();
+    });
+
+    it('does not render taxonomic category badge when showCategory is omitted or false, but renders category when showCategory={true}', () => {
+      const itemWithCategory = {
+        id: 'cat-test',
+        word: 'TIGER',
+        category: 'Big Cats',
+        iconName: 'cat',
+        isOutlier: false,
+      };
+
+      const { rerender } = render(<VerbalIllustrationSVG item={itemWithCategory} />);
+      expect(screen.queryByText('Big Cats')).not.toBeInTheDocument();
+
+      rerender(<VerbalIllustrationSVG item={itemWithCategory} showCategory={false} />);
+      expect(screen.queryByText('Big Cats')).not.toBeInTheDocument();
+
+      rerender(<VerbalIllustrationSVG item={itemWithCategory} showCategory={true} />);
+      expect(screen.getByText('Big Cats')).toBeInTheDocument();
+    });
+
+    it('renders distinct custom SVG illustrations for planets that share iconName "planet"', () => {
+      const saturn = { id: 's', word: 'Saturn', category: 'Planet', iconName: 'planet', isOutlier: false };
+      const jupiter = { id: 'j', word: 'Jupiter', category: 'Planet', iconName: 'planet', isOutlier: false };
+      const mars = { id: 'm', word: 'Mars', category: 'Planet', iconName: 'planet', isOutlier: false };
+
+      const { container: sContainer } = render(<VerbalIllustrationSVG item={saturn} />);
+      expect(sContainer.querySelector('ellipse[rx="18"]')).not.toBeNull(); // Saturn rings
+
+      const { container: jContainer } = render(<VerbalIllustrationSVG item={jupiter} />);
+      expect(jContainer.querySelector('circle[fill="#DC2626"]')).not.toBeNull(); // Great Red Spot
+
+      const { container: mContainer } = render(<VerbalIllustrationSVG item={mars} />);
+      expect(mContainer.querySelector('ellipse[rx="4"]')).not.toBeNull(); // Polar cap
+    });
+
+    it('renders distinct illustrations for musical instruments (Violin, Cello, Trumpet, Harp, Guitar)', () => {
+      const violin = { id: 'v', word: 'Violin', category: 'Strings', iconName: 'violin', isOutlier: false };
+      const trumpet = { id: 't', word: 'Trumpet', category: 'Brass', iconName: 'trumpet', isOutlier: true };
+      const harp = { id: 'h', word: 'Harp', category: 'Strings', iconName: 'harp', isOutlier: false };
+
+      const { container: vContainer } = render(<VerbalIllustrationSVG item={violin} />);
+      expect(vContainer.querySelector('svg[aria-label="Classical violin"]')).not.toBeNull();
+
+      const { container: tContainer } = render(<VerbalIllustrationSVG item={trumpet} />);
+      expect(tContainer.querySelector('svg[aria-label="Brass trumpet"]')).not.toBeNull();
+
+      const { container: hContainer } = render(<VerbalIllustrationSVG item={harp} />);
+      expect(hContainer.querySelector('svg[aria-label="Triangular string harp"]')).not.toBeNull();
+    });
+
+    it('renders distinct illustrations for kitchen utensils (Spoon, Fork, Knife, Whisk, Spatula, Hammer)', () => {
+      const spoon = { id: 'sp', word: 'Spoon', category: 'Utensil', iconName: 'utensils', isOutlier: false };
+      const fork = { id: 'fk', word: 'Fork', category: 'Utensil', iconName: 'utensils', isOutlier: false };
+      const knife = { id: 'kn', word: 'Knife', category: 'Utensil', iconName: 'utensils', isOutlier: false };
+
+      const { container: spContainer } = render(<VerbalIllustrationSVG item={spoon} />);
+      expect(spContainer.querySelector('svg[aria-label="Dining spoon"]')).not.toBeNull();
+
+      const { container: fkContainer } = render(<VerbalIllustrationSVG item={fork} />);
+      expect(fkContainer.querySelector('svg[aria-label="Dining fork"]')).not.toBeNull();
+
+      const { container: knContainer } = render(<VerbalIllustrationSVG item={knife} />);
+      expect(knContainer.querySelector('svg[aria-label="Kitchen knife"]')).not.toBeNull();
+    });
+
+    it('renders distinct illustrations for animals (Dolphin, Elephant, Crocodile, Kangaroo, Bat, Otter)', () => {
+      const dolphin = { id: 'd', word: 'Dolphin', category: 'Mammal', iconName: 'dolphin', isOutlier: false };
+      const crocodile = { id: 'c', word: 'Crocodile', category: 'Reptile', iconName: 'crocodile', isOutlier: true };
+
+      const { container: dContainer } = render(<VerbalIllustrationSVG item={dolphin} />);
+      expect(dContainer.querySelector('svg[aria-label="Dolphin jumping"]')).not.toBeNull();
+
+      const { container: cContainer } = render(<VerbalIllustrationSVG item={crocodile} />);
+      expect(cContainer.querySelector('svg[aria-label="Crocodile reptile"]')).not.toBeNull();
+    });
+
+    it('renders distinct illustrations for citrus fruits (Apple, Orange, Lemon)', () => {
+      const apple = { id: 'a', word: 'Apple', category: 'Pome', iconName: 'apple', isOutlier: true };
+      const orange = { id: 'o', word: 'Orange', category: 'Citrus', iconName: 'fruit', isOutlier: false };
+
+      const { container: aContainer } = render(<VerbalIllustrationSVG item={apple} />);
+      expect(aContainer.querySelector('.lucide-apple')).not.toBeNull();
+
+      const { container: oContainer } = render(<VerbalIllustrationSVG item={orange} />);
+      expect(oContainer.querySelector('svg[aria-label="Citrus fruit segment wheel"]')).not.toBeNull();
+    });
+
+    it('verifies that all 36 questions in verbalQuestionBank render valid icons without HelpCircle fallback', () => {
+      const allQuestions = getAllVerbalQuestions();
+      expect(allQuestions.length).toBeGreaterThanOrEqual(30);
+
+      allQuestions.forEach((q) => {
+        const gridData = q.stimulus as VerbalGridData;
+        gridData.items.forEach((it) => {
+          const { container } = render(<VerbalIllustrationSVG item={it} />);
+          // HelpCircle should NOT be rendered for any curated question item
+          const fallback = container.querySelector('.lucide-help-circle');
+          expect(fallback).toBeNull();
+        });
+      });
     });
   });
 

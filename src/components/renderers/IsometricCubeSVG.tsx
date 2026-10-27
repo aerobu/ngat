@@ -23,11 +23,11 @@ export const IsometricCubeSVG: React.FC<IsometricCubeSVGProps> = ({
   const H = 19; // half-height slope
   const L = 28; // layer height
 
-  // SVG dimensions
-  const svgWidth = 360;
-  const svgHeight = 280;
+  // SVG dimensions (calibrated to guarantee zero clipping up to 5 layers)
+  const svgWidth = 380;
+  const svgHeight = 310;
   const X0 = svgWidth / 2;
-  const Y0 = 120;
+  const Y0 = 140;
 
   // Objective prompt title
   const questionType = data.questionType ?? 'total-cubes';
