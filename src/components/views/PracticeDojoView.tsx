@@ -57,26 +57,28 @@ const ARCHETYPES_BY_SUBTEST: Record<SubtestType, { id: QuestionArchetype; label:
 const renderOptionVisual = (visual: CellVisual) => {
   if (!visual) return null;
   if (visual.type === 'number') {
-    return <span className="font-mono text-xl font-bold text-gray-900">{visual.value}</span>;
-  }
-  if (visual.type === 'shape') {
     return (
-      <svg className="w-10 h-10" viewBox="0 0 100 100">
-        <GeometricShapeSVG visual={visual} />
-      </svg>
-    );
-  }
-  if (visual.type === 'dice') {
-    return (
-      <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
-        {visual.pips}
+      <div className="flex items-center gap-1.5">
+        <span className="font-mono text-xl font-bold text-gray-900">{visual.value}</span>
+        {visual.label && <span className="text-xs text-gray-500 font-semibold">{visual.label}</span>}
       </div>
     );
   }
   if (visual.type === 'verbal-word') {
-    return <span className="font-bold text-sm text-gray-900">{visual.word}</span>;
+    return (
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+          <GeometricShapeSVG visual={visual} size={32} showLabel={false} />
+        </div>
+        <span className="font-bold text-sm text-gray-900">{visual.word}</span>
+      </div>
+    );
   }
-  return null;
+  return (
+    <div className="w-10 h-10 flex items-center justify-center flex-shrink-0">
+      <GeometricShapeSVG visual={visual} size={40} />
+    </div>
+  );
 };
 
 export const PracticeDojoView: React.FC<PracticeDojoViewProps> = ({

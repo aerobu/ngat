@@ -447,6 +447,37 @@ describe('Stage 3: View, Store & UI/UX Interaction Suite', () => {
       expect(sessionArg.percentileRank).toBeGreaterThanOrEqual(1);
       expect(sessionArg.percentileRank).toBeLessThanOrEqual(99);
     });
+
+    it('faithfully handles 6-option Verbal questions (A through F) with authentic click-to-select and advance', async () => {
+      const user = userEvent.setup();
+      const onFinish = vi.fn();
+      const onExit = vi.fn();
+
+      render(
+        <ExamSimulatorView
+          subtest="verbal"
+          questionCount={3}
+          timeLimitSeconds={300}
+          seed={42}
+          onFinishExam={onFinish}
+          onExitExam={onExit}
+        />
+      );
+
+      // Verify all 6 options A through F are present
+      for (let i = 0; i < 6; i++) {
+        expect(screen.getByTestId(`exam-option-${i}`)).toBeInTheDocument();
+      }
+
+      // Click option 3 (D) -> highlights but does not advance
+      await user.click(screen.getByTestId('exam-option-3'));
+      expect(screen.getByTestId('exam-option-3')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByText(/Question 1/i)).toBeInTheDocument();
+
+      // Click advance (➔) -> moves to Q2
+      await user.click(screen.getByTestId('exam-next-btn'));
+      expect(screen.getByText(/Question 2/i)).toBeInTheDocument();
+    });
   });
 
   // ==========================================================================
@@ -639,17 +670,57 @@ describe('Stage 3: View, Store & UI/UX Interaction Suite', () => {
       expect(screen.getByTestId('start-dojo-btn')).toBeInTheDocument();
     });
 
-    it('App integration: mounts cleanly and navigates between views', async () => {
+    it('allows students and parents to launch Quantitative, Nonverbal, Verbal, or Mixed mock exams', async () => {
+      const user = userEvent.setup();
+      const progress = createMockProgress();
+      const missions = createMockMissions();
+      const onStartExam = vi.fn();
+      const onStartDojo = vi.fn();
+      const onStartTutorial = vi.fn();
+      const onStartMission = vi.fn();
+
+      render(
+        <DashboardView
+          progress={progress}
+          missions={missions}
+          onStartExam={onStartExam}
+          onStartDojo={onStartDojo}
+          onStartTutorial={onStartTutorial}
+          onStartMission={onStartMission}
+        />
+      );
+
+      // Launch Nonverbal Mock
+      await user.click(screen.getByTestId('start-nonverbal-exam-btn'));
+      expect(onStartExam).toHaveBeenCalledWith('nonverbal', 30);
+
+      // Launch Verbal Mock
+      await user.click(screen.getByTestId('start-verbal-exam-btn'));
+      expect(onStartExam).toHaveBeenCalledWith('verbal', 30);
+
+      // Launch Mixed Mock
+      await user.click(screen.getByTestId('start-mixed-exam-btn'));
+      expect(onStartExam).toHaveBeenCalledWith('mixed', 40);
+    });
+
+    it('App integration: mounts cleanly, starts exam, and navigates correctly', async () => {
       const user = userEvent.setup();
       render(<App />);
 
       // Default landing on Dashboard with missions
       expect(screen.getByTestId('mission-card-1')).toBeInTheDocument();
 
-      // Can navigate to Tutorial
-      const tutorialBtn = screen.getByTestId('nav-tutorial-btn');
-      await user.click(tutorialBtn);
-      expect(screen.getByText(/Tutorial|Golden Rule/i)).toBeInTheDocument();
+      // Start Quantitative Exam from Dashboard
+      await user.click(screen.getByTestId('start-quant-exam-btn'));
+
+      // In Simulator: Question 1 is visible
+      expect(screen.getByText(/Question 1/i)).toBeInTheDocument();
+      expect(screen.getByTestId('exam-timer')).toBeInTheDocument();
+
+      // Can select and advance
+      await user.click(screen.getByTestId('exam-option-0'));
+      await user.click(screen.getByTestId('exam-next-btn'));
+      expect(screen.getByText(/Question 2/i)).toBeInTheDocument();
     });
   });
 });

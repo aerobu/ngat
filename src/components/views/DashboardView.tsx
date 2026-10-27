@@ -143,15 +143,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </div>
 
-            <div className="pt-6 relative z-10">
+            <div className="pt-6 relative z-10 space-y-2">
               <button
                 data-testid="start-quant-exam-btn"
                 onClick={() => onStartExam('quantitative', 40)}
                 className="w-full py-3.5 px-6 rounded-2xl font-black text-sm bg-amber-400 text-slate-950 hover:bg-amber-300 transition-all shadow-lg flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" />
-                <span>Launch Mock Exam (40 Questions)</span>
+                <span>Launch Quantitative Mock (40 Questions)</span>
               </button>
+
+              <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                <button
+                  data-testid="start-nonverbal-exam-btn"
+                  onClick={() => onStartExam('nonverbal', 30)}
+                  className="py-2 px-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 text-white font-bold text-xs transition-all cursor-pointer"
+                >
+                  Nonverbal (30Q)
+                </button>
+                <button
+                  data-testid="start-verbal-exam-btn"
+                  onClick={() => onStartExam('verbal', 30)}
+                  className="py-2 px-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 text-white font-bold text-xs transition-all cursor-pointer"
+                >
+                  Verbal (30Q)
+                </button>
+                <button
+                  data-testid="start-mixed-exam-btn"
+                  onClick={() => onStartExam('mixed', 40)}
+                  className="py-2 px-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 text-white font-bold text-xs transition-all cursor-pointer"
+                >
+                  Full Mock (40Q)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -171,18 +195,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Infinite procedural puzzle drills with 3-stage progressive hints, visual rule overlays, step-by-step logic breakdowns, and cognitive trap analysis.
               </p>
               <div className="grid grid-cols-3 gap-2 pt-1 text-center">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                <button
+                  onClick={() => onStartDojo('quantitative')}
+                  className="bg-slate-50 hover:bg-blue-50 hover:border-blue-300 p-2.5 rounded-xl border border-slate-200 transition-all cursor-pointer text-center"
+                >
                   <span className="block text-xs font-black text-blue-700">Quantitative</span>
                   <span className="text-[10px] text-gray-500 font-bold">5 Archetypes</span>
-                </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                </button>
+                <button
+                  onClick={() => onStartDojo('nonverbal')}
+                  className="bg-slate-50 hover:bg-purple-50 hover:border-purple-300 p-2.5 rounded-xl border border-slate-200 transition-all cursor-pointer text-center"
+                >
                   <span className="block text-xs font-black text-purple-700">Nonverbal</span>
                   <span className="text-[10px] text-gray-500 font-bold">4 Archetypes</span>
-                </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                </button>
+                <button
+                  onClick={() => onStartDojo('verbal')}
+                  className="bg-slate-50 hover:bg-amber-50 hover:border-amber-300 p-2.5 rounded-xl border border-slate-200 transition-all cursor-pointer text-center"
+                >
                   <span className="block text-xs font-black text-amber-700">Verbal</span>
                   <span className="text-[10px] text-gray-500 font-bold">Classification</span>
-                </div>
+                </button>
               </div>
             </div>
 
