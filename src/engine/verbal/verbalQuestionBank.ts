@@ -988,7 +988,8 @@ function transformDefToQuestion(qDef: VerbalQuestionDef, seed: number): NGATQues
     id: `stim-item-${qDef.id}-${idx}`,
     word: item.word,
     category: item.category,
-    isOutlier: item.isOutlier,
+    iconName: item.iconName,
+    isOutlier: Boolean(item.isOutlier),
     definitionHint: item.explanation,
   }));
 

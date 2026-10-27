@@ -240,7 +240,8 @@ export interface VerbalGridData {
     id: string;
     word: string;
     category: string;
-    isOutlier?: boolean;
+    iconName: string;
+    isOutlier: boolean;
     definitionHint?: string;
   }[];
   sharedRule: string;
